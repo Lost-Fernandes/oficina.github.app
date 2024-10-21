@@ -86,7 +86,7 @@
         <input type="text" id="model" placeholder="Modelo" required />
         <input type="text" id="plate" placeholder="Placa" required />
         <input type="date" id="lastService" placeholder="Última manutenção" required />
-        <input type="text" id="phone" placeholder="Número do WhatsApp" required />
+        <input type="text" id="phone" placeholder="Número do WhatsApp (sem código do país)" required />
         <button type="submit">Cadastrar Veículo</button>
     </form>
 
@@ -140,7 +140,8 @@
 
         // Função para enviar notificação via WhatsApp
         function sendWhatsAppNotification(vehicle) {
-            const whatsappLink = `https://api.whatsapp.com/send?phone=${vehicle.phone}&text=Olá, seu%20${vehicle.model},%20a%20data%20da%20sua%20próxima%20revisão%20chegou.%20Placa:%20${vehicle.plate}`;
+            const whatsappNumber = `55${vehicle.phone}`;
+            const whatsappLink = `https://api.whatsapp.com/send?phone=${whatsappNumber}&text=Olá, seu%20${vehicle.model},%20a%20data%20da%20sua%20próxima%20revisão%20chegou.%20Placa:%20${vehicle.plate}`;
             window.open(whatsappLink, '_blank');
         }
 
@@ -203,34 +204,31 @@
 
             const maintenanceEntry = { date, description };
 
-            const maintenanceHistory = localStorage.getItem(plate + '_history') || '[]';
-            const updatedHistory = JSON.parse(maintenanceHistory);
-            updatedHistory.push(maintenanceEntry);
-            localStorage.setItem(plate + '_history', JSON.stringify(updatedHistory));
-
+            const maintenanceHistoryKey = plate + '_history';
+            const history = JSON.parse(localStorage.getItem(maintenanceHistoryKey)) || [];
+            history.push(maintenanceEntry);
+            localStorage.setItem(maintenanceHistoryKey, JSON.stringify(history));
             alert('Manutenção registrada com sucesso!');
+
+            // Atualiza a exibição do histórico de manutenção
             displayMaintenanceHistory(plate);
         });
 
         // Função para exibir histórico de manutenção
         function displayMaintenanceHistory(plate) {
-            const maintenanceHistory = JSON.parse(localStorage.getItem(plate + '_history')) || [];
-            const maintenanceHistoryList = document.getElementById('maintenanceHistory');
-            maintenanceHistoryList.innerHTML = '';
+            const maintenanceHistory = document.getElementById('maintenanceHistory');
+            maintenanceHistory.innerHTML = '';
 
-            maintenanceHistory.forEach(entry => {
+            const history = JSON.parse(localStorage.getItem(plate + '_history')) || [];
+            history.forEach(entry => {
                 const listItem = document.createElement('li');
-                listItem.textContent = `${entry.date} - ${entry.description}`;
-                maintenanceHistoryList.appendChild(listItem);
+                listItem.textContent = `Data: ${entry.date}, Descrição: ${entry.description}`;
+                maintenanceHistory.appendChild(listItem);
             });
         }
 
-        // Atualiza o histórico de manutenção ao carregar a página
-        document.addEventListener('DOMContentLoaded', function () {
-            displayUpcomingServices();
-            const plates = Object.keys(localStorage).filter(key => !key.endsWith('_history'));
-            plates.forEach(plate => displayMaintenanceHistory(plate));
-        });
+        // Atualiza a exibição ao carregar a página
+        displayUpcomingServices();
     </script>
 
 </body>
